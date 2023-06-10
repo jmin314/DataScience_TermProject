@@ -1,6 +1,8 @@
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score, KFold
 from matplotlib.pyplot import plot
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -11,6 +13,7 @@ import Preprocessing
 
 # Read base Data set
 df = pd.read_csv('/Users/jangminseong/Desktop/데과/텀프/LA_Crime_Data_2022.csv')
+df2023 = pd.read_csv('/Users/jangminseong/Desktop/데과/텀프/Crime_2023.csv')
 
 # User Input Data example
 User_input_data = {'TIME OCC' : [21],
@@ -26,12 +29,15 @@ UserInputPreprocessed = Preprocessing.User_Input_Preprocessing(User_Input)
 
 # Preprocessing base Data set
 Preprocessed_2022 = Preprocessing.For_Full_Data_Model(df)
+# Preprocessed_2023 = Preprocessing.For_Full_Data_Model(df2023)
 # Standard Scaling base Data set
 Scalled_2022 = Preprocessing.Scaling_Set(Preprocessed_2022)
+# Scalled_2023 = Preprocessing.Scaling_Set(Preprocessed_2023)
 
 # Set X, y for Full Data Model
 X = Scalled_2022.drop(['Felony Rate By TA', 'Freq F By Hour', 'Vict Age', 'Freq F By Age'], axis = 1)
 y = Scalled_2022['Felony Rate By TA']
+# X_2023 = Scalled_2023.drop(['Felony Rate By TA', 'Freq F By Hour', 'Vict Age', 'Freq F By Age'], axis = 1)
 
 # Set X, y for User Input Data Model
 drop_columns=['TIME OCC', 'AREA', 'Vict Age', 'Felony Rate By TA','Weapon Or Not', 'Crime Class', 'Crime Count',
@@ -45,11 +51,19 @@ yU.loc[filtered_indices] = 1
 
 # Split data for Full data model
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
 XU_train, XU_test, yU_train, yU_test = train_test_split(XU, yU, test_size=0.2, random_state=42)
 
 # Fit train data
 model = GradientBoostingRegressor()
 model.fit(X_train, y_train)
+
+# Claculate MSE using K Fold
+k = 10  
+kf = KFold(n_splits=k, shuffle=True)
+mse_scores = -cross_val_score(model, X, y, cv=kf, scoring='neg_mean_squared_error')
+mean_mse = np.mean(mse_scores)
+print(f'Mean Squared Error: {mean_mse}')
 
 # Fit all XU and yU
 modelU = LogisticRegression()
@@ -57,11 +71,27 @@ modelU.fit(XU_train, yU_train)
 
 # Prediction
 y_pred = model.predict(X_test)
-yU_pred = modelU.predict_proba(XU_test)
-# yU_pred = modelU.predict_proba(UserInputPreprocessed)
+print("Full Dataset Test:")
+num_results = 10  
+for i in range(num_results):
+    print(f"Example {i+1}: {y_pred[i]:.6f}")
+
+# Model score
+print("Score", model.score(X_test, y_test))
+    
+# y_2023_pred = model.predict(X_2023)
+# yU_pred = modelU.predict_proba(XU_test)
+yU_pred = modelU.predict_proba(UserInputPreprocessed)
+
+
+    
+# print("2023 Dataset Test:")
+# num_results = 10  
+# for i in range(num_results):
+#     print(f"Example {i+1}: {y_2023_pred[i]:.6f}")
 
 # Result about User Input Data
-print("User Input prediction : ", yU_pred)
+print("User Input prediction : \n", yU_pred)
 print("User Input Model Accuracy : ", modelU.score(XU_test, yU_test))
 
 # Each X's correlation matrix
