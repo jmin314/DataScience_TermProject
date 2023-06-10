@@ -29,11 +29,11 @@ def User_Input_Preprocessing(CrimeSet):
     CrimeSet['Vict Descent'] = CrimeSet['Vict Descent'].replace(other, 'Other')
 
     # Set NAN Descent as Other
-    CrimeSet['Vict Descent']=CrimeSet['Vict Descent'].replace(np.nan,'Other')
+    CrimeSet.dropna(subset = ['Vict Descent'], inplace = True)
     # Set NAN Sex as X
     CrimeSet['Vict Sex']=CrimeSet['Vict Sex'].replace(np.nan,'X')
-    
-        # Make Freq F by Hour : felony ratio per hour
+
+    # Make Freq F by Hour : felony ratio per hour
     # Order setted as ratio of felony
     order = [12, 0, 11, 10, 8, 6, 9, 13, 7, 14, 15, 16, 1, 18, 17, 20, 19, 21, 22, 2, 23, 5, 3, 4]
     CrimeSet['Freq F By Hour'] = CrimeSet['TIME OCC'].map(lambda x: order.index(x))
@@ -59,17 +59,19 @@ def User_Input_Preprocessing(CrimeSet):
     CrimeSet['Vict Age'] = CrimeSet['Vict Age'].apply(lambda x: math.floor(x/10)*10)
     # Clear -10
     CrimeSet = CrimeSet[CrimeSet['Vict Age'] != -10]
+    # Clear 0
+    CrimeSet = CrimeSet[CrimeSet['Vict Age'] != 0]
 
     # Make Freq F by Age : felony raio per Age of victim
     # Order setted as ratio of felony
-    order = [0,10,70,60,50,80,90,40,30,20]
+    order = [10,70,60,50,80,90,40,30,20]
     CrimeSet['Freq F By Age'] = CrimeSet['Vict Age'].map(lambda x: order.index(x))
     drop_columns=['Vict Descent', 'Vict Sex', 'TIME OCC', 'AREA', 'Vict Age']
     CrimeSet.drop(drop_columns,axis=1,inplace=True)
-    # CrimeSet = CrimeSet.astype(float)
     
     print("User Input Preprocessing Done!")
     return CrimeSet
+
 
 def For_Full_Data_Model(CrimeSet):
     # Tuning time data to two digit (0~23)
@@ -114,9 +116,10 @@ def For_Full_Data_Model(CrimeSet):
     CrimeSet['Vict Descent'] = CrimeSet['Vict Descent'].replace(other, 'Other')
 
     # Set NAN Descent as Other
-    CrimeSet['Vict Descent']=CrimeSet['Vict Descent'].replace(np.nan,'Other')
+    CrimeSet.dropna(subset=['Vict Descent'], inplace=True)
     # Set NAN Sex as X
     CrimeSet['Vict Sex']=CrimeSet['Vict Sex'].replace(np.nan,'X')
+    
     
     CrimeSet['Weapon Or Not'] = np.where(~CrimeSet['Weapon Used Cd'].isna(), 1, 0)
     CrimeSet['Weapon Or Not'].value_counts()
@@ -185,11 +188,13 @@ def For_Full_Data_Model(CrimeSet):
     CrimeSet['Vict Age'] = CrimeSet['Vict Age'].apply(lambda x: math.floor(x/10)*10)
     # Clear -10
     CrimeSet = CrimeSet[CrimeSet['Vict Age'] != -10]
+    CrimeSet = CrimeSet[CrimeSet['Vict Age'] != 0]
 
     # Make Freq F by Age : felony raio per Age of victim
     # Order setted as ratio of felony
-    order = [0,10,70,60,50,80,90,40,30,20]
+    order = [10,70,60,50,80,90,40,30,20]
     CrimeSet['Freq F By Age'] = CrimeSet['Vict Age'].map(lambda x: order.index(x))
+    
 
     # Incase of Mocodes = NAN, Ex Convict to DEFAULT(1)
     CrimeSet['Mocodes']=CrimeSet['Mocodes'].fillna(0)
@@ -243,6 +248,7 @@ def For_Full_Data_Model(CrimeSet):
     
     print("Full Dataset Preprocessing Done!")
     return CrimeSet
+
 
 def Scaling_Set(CrimeSet):
     # Scaling
